@@ -38,6 +38,7 @@ function payment_init()
 {
 	global $CONFIG;
     classpath_add(__DIR__ . '/src', true, 'system');
+    add_wdfresource_dir(__DIR__ . '/res');
 
 	if( !isset($CONFIG["payment"]["order_model"]) || !$CONFIG["payment"]["order_model"] )
 		WdfException::Raise('Please configure an order_model for the payment module');

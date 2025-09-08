@@ -36,31 +36,31 @@ use ScavixWDF\WdfException;
 
 /**
  * Gate2Shop payment provider.
- * 
+ *
  * @deprecated (2022/07) Unused and untested for a long time
  */
 class Gate2Shop extends PaymentProvider
 {
 	public $type = PaymentProvider::PROCESSOR_GATE2SHOP;
 	public $type_name = "gate2shop";
-	
+
 	function __construct()
 	{
 		global $CONFIG;
 		parent::__construct();
-		
+
 		if( !isset($CONFIG["payment"]["gate2shop"]["merchant_id"]) )
 			WdfException::Raise("Gate2Shop: Missing merchant_id");
 
 		if( !isset($CONFIG["payment"]["gate2shop"]["merchant_site_id"]) )
 			WdfException::Raise("Gate2Shop: Missing merchant_site_id");
-		
+
 		if( !isset($CONFIG["payment"]["gate2shop"]["secret_key"]) )
 			WdfException::Raise("Gate2Shop: Missing secret_key");
-		
-		$this->small_image = resFile("payment/gate2shop.png");
+
+		$this->small_image = resFile("/gate2shop.png");
 	}
-	
+
 	private function EnsureCurrency($order)
 	{
 		$currency = $order->GetCurrency();
@@ -93,12 +93,12 @@ class Gate2Shop extends PaymentProvider
 		log_warn("Gate2Shop: Invalid currency '$currency'. Falling back to EUR");
 		return 'EUR';
 	}
-	
+
 	private function SanitizeLocale($order)
 	{
 		$locale = $order->GetLocale();
 		if( !$locale ) return false;
-		
+
 		if( is_string($locale) )
 		{
 			if( $tmp = Localization::getCultureInfo($locale) )
@@ -136,7 +136,7 @@ class Gate2Shop extends PaymentProvider
 		log_warn("Gate2Shop: Invalid locale '$locale'. Skipping argument");
 		return false;
 	}
-	
+
 	private function CalcChecksum()
 	{
 		global $CONFIG;
@@ -144,38 +144,38 @@ class Gate2Shop extends PaymentProvider
 			.$this->data['merchant_id']
 			.$this->data['currency']
 			.$this->data['total_amount'];
-		
+
 		for($i=1; $i<=$this->data['numberofitems']; $i++ )
 		{
 			$content .= $this->data["item_name_$i"]
 				.$this->data["item_amount_$i"]
 				.$this->data["item_quantity_$i"];
 		}
-		
+
 		$content .= $this->data['time_stamp'];
 		return md5($content);
 	}
-	
+
 	/**
 	 * @override
 	 */
 	public function StartCheckout(IShopOrder $order, $ok_url=false, $cancel_url=false)
 	{
 		global $CONFIG;
-		
+
 		if( $ok_url )
 			log_info('Gate2Shop does not allow to pass a return URL, so ignoring it.');
-		
+
 		// merchant details
 		$this->SetVar('merchant_id', $CONFIG["payment"]["gate2shop"]["merchant_id"]);
 		$this->SetVar('merchant_site_id', $CONFIG["payment"]["gate2shop"]["merchant_site_id"]);
-		
+
 		// merchant site details
-		if( isset($CONFIG["payment"]["gate2shop"]["customSiteName"]) ) 
+		if( isset($CONFIG["payment"]["gate2shop"]["customSiteName"]) )
 			$this->SetVar('customSiteName', $CONFIG["payment"]["gate2shop"]["customSiteName"]);
-		
+
 		$order_currency = $this->EnsureCurrency($order);
-		
+
 		// item details
 		$items = $order->ListItems();
 		if( count($items) > 0 )
@@ -192,14 +192,14 @@ class Gate2Shop extends PaymentProvider
 				if( $tmp = $item->GetShipping() ) $this->SetVar("item_shipping_$i",$tmp);
 				if( $tmp = $item->GetHandling() ) $this->SetVar("item_handling_$i",$tmp);
 				if( $tmp = $item->GetDiscount() ) $this->SetVar("item_discount_$i",$tmp);
-				
+
 				$i++;
 				$total_amount += round($order->GetTotalPrice($item->GetAmount($order_currency)), 2);
 			}
 			$this->SetVar('total_amount', round($total_amount, 2));
 			$this->SetVar('total_tax', $order->GetVatPercent());
 		}
-		
+
 		// customer details
 		$address = $order->GetAddress();
 		if( $address->Firstname ) $this->SetVar('first_name', substr($address->Firstname, 0, 30));
@@ -214,25 +214,25 @@ class Gate2Shop extends PaymentProvider
 		if( $address->Phone1 ) $this->SetVar('phone1',$address->Phone1);
 		if( $address->Phone2 ) $this->SetVar('phone2',$address->Phone2);
 		if( $address->Phone3 ) $this->SetVar('phone3',$address->Phone3);
-		
+
 		// other parameters
 		$this->SetVar('version', '3.0.0');
 		$this->SetVar('currency', $order_currency );
 		$this->SetVar('time_stamp', gmdate('Y-m-d H:i:s'));
-		
-		if( $tmp = $order->GetInvoiceId() ) 
+
+		if( $tmp = $order->GetInvoiceId() )
 		{
 			$this->SetVar('invoice_id', $tmp);
 			$this->SetVar('merchant_unique_id', $tmp);		// invoice_id is not shown in g2s admin. but this one is...
 		}
 		if( $tmp = $this->SanitizeLocale($order) ) $this->SetVar('merchantLocale',$tmp);
-		
+
 		// finally create the checksum
 		$this->SetVar('checksum', $this->CalcChecksum());
 		$checkouturl = "https://secure.gate2shop.com/ppp/purchase.do";
 		return $this->CheckoutForm($checkouturl);
 	}
-	
+
 /**
 	 * Verify that the IPN is a valid IPN call from G2S
 	 */
@@ -247,7 +247,7 @@ class Gate2Shop extends PaymentProvider
 				return false;
 			}
 		}
-		
+
 		// check checksum
 		$checksum = md5($CONFIG["payment"]["gate2shop"]["secret_key"].$ipndata["ppp_status"].$ipndata["PPP_TransactionID"]);
 		if($checksum != $ipndata["responsechecksum"])
@@ -255,10 +255,10 @@ class Gate2Shop extends PaymentProvider
 			log_error("Gate2Shop: Checksum don't consist with response");
 			return false;
 		}
-		
+
 		return true;
 	}
-	
+
 	/**
 	 * @override
 	 */
@@ -266,22 +266,22 @@ class Gate2Shop extends PaymentProvider
 	{
 		global $CONFIG;
 		$order_id = $ipndata["invoice_id"];
-        
+
         $this->compatConfig();
-        
+
 		if(starts_with($order_id, $CONFIG["payment"]["invoice_id_prefix"]))
-			$order_id = trim(str_replace($CONFIG["payment"]["invoice_id_prefix"], "", $order_id));		
-		
+			$order_id = trim(str_replace($CONFIG["payment"]["invoice_id_prefix"], "", $order_id));
+
 		$order = $this->LoadOrder($order_id);
 		if( !$order )
 			return "Order id $order_id not found";   // order not found
-		
+
 		if(!$this->CheckIPNCall($order, $ipndata))
 			return "Invalid IPN parameters";
-		
+
 		return $this->HandlePayment($order, $ipndata);
 	}
-	
+
 	/**
 	 * @override
 	 */
@@ -292,7 +292,7 @@ class Gate2Shop extends PaymentProvider
 			return "cancel";
 		return $status;
 	}
-	
+
 	/**
 	 * @override
 	 */
@@ -307,7 +307,7 @@ class Gate2Shop extends PaymentProvider
 				return false;
 			}
 		}
-		
+
 		// check checksum
 		$checksum = md5($CONFIG["payment"]["gate2shop"]["secret_key"].$ipndata["totalAmount"].$ipndata["currency"].$ipndata["responseTimeStamp"].$ipndata["PPP_TransactionID"].$ipndata["Status"].$ipndata["productId"]);
 		if($checksum != $ipndata["advanceResponseChecksum"])
@@ -315,28 +315,28 @@ class Gate2Shop extends PaymentProvider
 			log_error("Gate2Shop: Checksum don't consist with response");
 			return false;
 		}
-		
+
         $this->compatConfig();
-        
+
 		$order_id = $ipndata["invoice_id"];
 		if(starts_with($order_id, $CONFIG["payment"]["invoice_id_prefix"]))
-			$order_id = trim(str_replace($CONFIG["payment"]["invoice_id_prefix"], "", $order_id));		
+			$order_id = trim(str_replace($CONFIG["payment"]["invoice_id_prefix"], "", $order_id));
 		$ds = model_datasource('system');
-		
-		
+
+
 		$order = $this->LoadOrder($order_id);
 		if( !$order )
 			return "Order id $order_id not found";   // order not found
-		
+
 		return $this->HandlePayment($order, $ipndata);
 	}
-	
+
 	private function HandlePayment(IShopOrder $order, $ipndata)
 	{
 		$payment_status = strtolower($ipndata["ppp_status"]);
-		$transaction_id = $ipndata["TransactionID"];		
+		$transaction_id = $ipndata["TransactionID"];
 		$statusmsg = false;
-		
+
 		if(strval($ipndata["ErrCode"])=='0' && strval($ipndata["ExErrCode"])=='-2')
 		{
 			$payment_status = "pending";
@@ -348,20 +348,20 @@ class Gate2Shop extends PaymentProvider
 				$statusmsg = "ErrCode: ".$ipndata["ErrCode"].", ExErrCode: ".$ipndata["ExErrCode"]." ".$ipndata["Reason"].", ".$ipndata["Error"];
 			else
 				$statusmsg = "ErrCode: ".$ipndata["ErrCode"].", ExErrCode: ".$ipndata["ExErrCode"].", "."Your transaction has been declined.";
-			
+
 			$payment_status = "failed";
 		}
 
 		if( isset($ipndata["transactionType"]) && (
-			($ipndata["transactionType"] == "Credit") 
-			|| ($ipndata["transactionType"] == "ChargeBack") 
-			|| ($ipndata["transactionType"] == "Void") 
+			($ipndata["transactionType"] == "Credit")
+			|| ($ipndata["transactionType"] == "ChargeBack")
+			|| ($ipndata["transactionType"] == "Void")
 			|| (($ipndata["transactionType"] == "Modification") && ($ipndata["Status"] == "CANCELED"))
 			))
 		{
 			$payment_status = "refunded";
 		}
-		
+
 		switch($payment_status)
 		{
 			case "pending":
@@ -371,11 +371,11 @@ class Gate2Shop extends PaymentProvider
 			case "ok":
 				$order->SetPaid(PaymentProvider::PROCESSOR_GATE2SHOP, $transaction_id, $statusmsg);
 				break;
-			
+
 			case "failed":
 				$order->SetFailed(PaymentProvider::PROCESSOR_GATE2SHOP, $transaction_id, $statusmsg);
 				break;
-			
+
 			case "refunded":
 				$order->SetRefunded(PaymentProvider::PROCESSOR_GATE2SHOP, $transaction_id, $statusmsg);
 				break;
@@ -383,8 +383,8 @@ class Gate2Shop extends PaymentProvider
 			default:
 				return "Unkown payment status: $payment_status";
 		}
-		
+
 		return true;
 	}
-	
+
 }
