@@ -147,7 +147,7 @@ class PayPal extends PaymentProvider
 
 		$this->SetVar('return', $ok_url);
 		$this->SetVar('cancel_return', $cancel_url);
-		$params = array("provider" => "paypal");
+		$params = ["provider" => "paypal"];
 		$notify_url = buildQuery($CONFIG["payment"]["paypal"]["notify_handler"][0], $CONFIG["payment"]["paypal"]["notify_handler"][1], $params);
 		$this->SetVar('notify_url', $notify_url);
 
