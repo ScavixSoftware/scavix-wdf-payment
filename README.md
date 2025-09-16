@@ -5,4 +5,8 @@ It contains functions to handle payments.
 
 Installation
 ============
-Install the package with `composer require {{name}}`.
+Install the package with `composer require scavix/wdf-payment`.
+
+Dependencies
+------------
+* [scavix/wdf-core (^1.0.1)](https://packagist.org/packages/scavix/wdf-core#v1.0.1)
