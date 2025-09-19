@@ -128,7 +128,7 @@ if( !function_exists('check_vat_number') )
                     if( !ScavixWDF\Wdf::GetLock($lock) )
                         return true;
                     $sc = new SoapClient("http://ec.europa.eu/taxation_customs/vies/checkVatService.wsdl");
-                    $test = $sc->checkVat(array('countryCode'=>$country_code,'vatNumber'=>$vat));
+                    $test = $sc->checkVat(['countryCode' => $country_code, 'vatNumber' => $vat]);
                     if( !$test->valid )
                         log_debug("VAT syntax ok, but SOAP says not",$vat_number,$country_code,$vat,$test);
 

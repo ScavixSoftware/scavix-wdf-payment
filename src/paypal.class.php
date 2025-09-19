@@ -125,8 +125,6 @@ class PayPal extends PaymentProvider
 		$order->SetCurrency($order_currency);
 		$this->SetVar("currency_code", $order_currency);
 		$this->SetVar("charset", "utf-8");
-//		set language of paypal UI:
-//		$this->SetVar("lc", );
 
 		if($CONFIG["payment"]["paypal"]["use_sandbox"] == true)
 		{
@@ -189,7 +187,6 @@ class PayPal extends PaymentProvider
 			$i = 1;
 			foreach( $items as $item )
 			{
-				$price = $item->GetAmount();
 				$this->SetVar("item_name_$i",$item->GetName());
 				$this->SetVar("amount_$i", round($item->GetAmount($order_currency), 2));
 				if($order->DoAddVat())
@@ -265,7 +262,7 @@ class PayPal extends PaymentProvider
 				else if(strcmp($res, "INVALID") == 0)
 				{
 					// log for manual investigation
-					log_error("PayPal IPN Verification failed: ".$res." ".$paypal_url."?".$req);
+					log_error("PayPal IPN Verification failed: $res $paypal_url?$req");
 //					mail("<somevalidmailaddress>", "Invalid PayPal IPN Request #$order_id", "Order #$order_id returned $res in PayPal recheck:\r\n\r\n".var_export($_REQUEST, true));
 					break;
 				}

@@ -233,7 +233,7 @@ class Gate2Shop extends PaymentProvider
 		return $this->CheckoutForm($checkouturl);
 	}
 
-/**
+    /**
 	 * Verify that the IPN is a valid IPN call from G2S
 	 */
 	private function CheckIPNCall(IShopOrder $order, $ipndata)
@@ -299,7 +299,7 @@ class Gate2Shop extends PaymentProvider
 	public function HandleReturnFromPP($ipndata)
 	{
 		global $CONFIG;
-		foreach(array("totalAmount", "currency", "responseTimeStamp", "PPP_TransactionID", "Status", "productId", "advanceResponseChecksum") as $k => $v)
+		foreach(["totalAmount", "currency", "responseTimeStamp", "PPP_TransactionID", "Status", "productId", "advanceResponseChecksum"] as $k => $v)
 		{
 			if(!isset($ipndata[$v]))
 			{
@@ -321,8 +321,6 @@ class Gate2Shop extends PaymentProvider
 		$order_id = $ipndata["invoice_id"];
 		if(starts_with($order_id, $CONFIG["payment"]["invoice_id_prefix"]))
 			$order_id = trim(str_replace($CONFIG["payment"]["invoice_id_prefix"], "", $order_id));
-		$ds = model_datasource('system');
-
 
 		$order = $this->LoadOrder($order_id);
 		if( !$order )

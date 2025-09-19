@@ -64,7 +64,7 @@ class TestingPaymentProvider extends PaymentProvider
 
 		if( $ok_url )
 		{
-			$data = http_build_query(array("provider" => $this->type_name, "status" => "ok", "invoice_id" => $order->GetInvoiceId()));
+			$data = http_build_query(["provider" => $this->type_name, "status" => "ok", "invoice_id" => $order->GetInvoiceId()]);
 			$ok_url .= (stripos($ok_url,'?')!==false?'&':'?').$data;
 			redirect($ok_url);
 		}
