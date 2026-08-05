@@ -20,6 +20,9 @@
 		}
 	],
 	"autoload": {
+        "psr-4": {
+            "ScavixWDF\\Payment\\": "src/"
+        },
 		"files": [
 			"bootstrap.php"
 		]
